@@ -1,13 +1,11 @@
-library(CRISPRcleanR)
-library("dplyr")
-library("magrittr")
-library("dplyr")
-library("magrittr")
-#install.packages("devtools")
+Sys.setenv(LANG = "en")
+install.packages("devtools",repos = "http://cran.us.r-project.org")
 library(devtools)
+install_github("francescojm/CRISPRcleanR")
 library(CRISPRcleanR)
+library("dplyr")
+library("magrittr")
 rm(list = ls())
-setwd("~/Desktop/PhD/Research/ATRT_screen/Pipeline_Screens/PoolQ")
 
 data("Brunello_Library")
 #create the construct barcode present in the poolq output in 
@@ -52,32 +50,26 @@ for(i in 1:length(plates)) {
 ###################################################################
 
 #####################Big table summing up all counts for all replicates and conditions#######
-#counts <- plate1 %>% left_join(plate2, by=c("Construct.Barcode","Construct.IDs")) %>%
- # left_join(plate3, by=c("Construct.Barcode","Construct.IDs")) %>% 
-  #left_join(Brunello,by=c("Construct.Barcode"="Construct.Barcode")) %>% 
-  #left_join(control_counts)
 
 counts <- purrr::reduce(lapply(ls(pattern = "Plate*"), get), dplyr::left_join,
                       by = c('Construct.Barcode',"Construct.IDs"))
+
 counts <- counts  %>% left_join(control_counts) %>% 
                   left_join(Brunello)
 
-#in case we have same sample/condition on different plates, merge the columns
-for(i in conditions) {
-  if(sum(startsWith(colnames(counts),i)) == 2) {
-    counts[paste(i)] <- counts[[which(startsWith(colnames(counts),i))[1]]] + 
-      counts[[which(startsWith(colnames(counts),i))[2]]]
-    counts <- subset(counts, select=-c(which(startsWith(colnames(counts),i))[1],
-                                       which(startsWith(colnames(counts),i))[2]))
+conditions <- unique(substr(conditions,1,nchar(conditions)-2))
 
-  } else if(sum(startsWith(colnames(counts),i)) > 2) {
-    stop("You have the same replicate and condition on at least 3 plates, 
-         please contact Laurence, she didn't code that situation yet")
-  }
+for(i in conditions) {
+  counts[paste(i)] <- counts %>% select(starts_with(i)) %>% rowSums()
 }
 
-#############################################################################
+counts <- counts  %>%
+  select(CODE,GENES,sum.pXPR_003,conditions)
 
+#############################################################################
+merge_table <- counts  %>%
+  select(CODE,GENES,sum.pXPR_003)
+colnames(merge_table) <- c("sgRNA","gene","CP0041")
 
 ############################CRISPRcleanR#####################################
 for(i in conditions){
@@ -91,11 +83,9 @@ for(i in conditions){
   write.csv(normANDfcs$norm_counts, file=paste0(i,"_norm_counts.csv"),row.names=FALSE)
   write.csv(normANDfcs$logFCs, file=paste0(i,"_logFCs.csv"),row.names=FALSE)
   
-  
+  merge_table <- merge_table %>% right_join(normANDfcs[["norm_counts"]])
 }
 
-##Tidy up
-#dir.create("")
-  
+write.csv(merge_table, file="all_norm_counts.csv",row.names=FALSE)
 
 
