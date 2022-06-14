@@ -6,7 +6,7 @@ library(CRISPRcleanR)
 library("dplyr")
 library("magrittr")
 rm(list = ls())
-
+setwd("/Volumes/groups/Neuro-Oncology/Clinical Neuro-Oncology/data backup/GBM_Screens/Broad screening/Knockout_synthetic_lethal_raw_data/1batch")
 data("Brunello_Library")
 #create the construct barcode present in the poolq output in 
 #the brunello table
@@ -57,6 +57,11 @@ counts <- purrr::reduce(lapply(ls(pattern = "Plate*"), get), dplyr::left_join,
 counts <- counts  %>% left_join(control_counts) %>% 
                   left_join(Brunello)
 
+conditions <- c("GS.9_DMSO_REP_A"  , "GS.9_DMSO_REP_B"  , "GS.9_Abema_REP_A", 
+                "GS.9_Abema_REP_B",  "GS.9_Rego_REP_A",   "GS.9_Rego_REP_B",  
+                "GS.9_Evero_REP_A",  "GS.9_Evero_REP_B" , "LN229_DMSO_REP_A", 
+                "LN229_DMSO_REP_B" , "LN229_Abema_REP_A" ,"LN229_Abema_REP_B",
+                "LN229_Evero_REP_A" ,"LN229_Evero_REP_B" ,"LN229_Rego_REP_A")
 conditions <- unique(substr(conditions,1,nchar(conditions)-2))
 
 for(i in conditions) {
@@ -72,6 +77,7 @@ merge_table <- counts  %>%
 colnames(merge_table) <- c("sgRNA","gene","CP0041")
 
 ############################CRISPRcleanR#####################################
+dir.create("crisprcleanR-graphs")
 for(i in conditions){
   input <- counts  %>%
     select(CODE,GENES,sum.pXPR_003,i)
@@ -80,12 +86,12 @@ for(i in conditions){
                                     saveToFig = TRUE,
                                     libraryAnnotation=Brunello_Library,
                                     EXPname=i)
-  write.csv(normANDfcs$norm_counts, file=paste0(i,"_norm_counts.csv"),row.names=FALSE)
-  write.csv(normANDfcs$logFCs, file=paste0(i,"_logFCs.csv"),row.names=FALSE)
+  write.csv(normANDfcs$norm_counts, file=paste0("crisprcleanR-graphs/",i,"_norm_counts.csv"),row.names=FALSE)
+  write.csv(normANDfcs$logFCs, file=paste0("crisprcleanR-graphs/",i,"_logFCs.csv"),row.names=FALSE)
   
   merge_table <- merge_table %>% right_join(normANDfcs[["norm_counts"]])
 }
 
-write.csv(merge_table, file="all_norm_counts.csv",row.names=FALSE)
+write.table(merge_table, file="all_norm_counts.tsv",row.names=FALSE, sep = "\t")
 
 
