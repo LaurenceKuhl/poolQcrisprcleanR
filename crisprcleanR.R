@@ -57,11 +57,15 @@ counts <- purrr::reduce(lapply(ls(pattern = "Plate*"), get), dplyr::left_join,
 counts <- counts  %>% left_join(control_counts) %>% 
                   left_join(Brunello)
 
-conditions <- unique(substr(conditions,1,nchar(conditions)-2))
+conditions <- unique(sub("^([^_]*_[^_]*).*", "\\1", conditions))
+
+conditions
 
 for(i in conditions) {
+  print(i)
   counts[paste(i)] <- counts %>% select(starts_with(i)) %>% rowSums()
 }
+
 
 counts <- counts  %>%
   select(CODE,GENES,sum.pXPR_003,conditions)
