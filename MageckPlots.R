@@ -73,10 +73,16 @@ for(i in 1:nrow(contrasts)){
  # write.table(pathway_gostres_table, file=paste0("Mageck-graphs/Pathway_analysis/Pathway_analysis_",contrasts$V1[i],"_",
   #                                         contrasts$V2[i],"_",g,".txt")
    #           ,sep="\t", quote = F, col.names = T, row.names = F)
-  write.xlsx(pathway_gostres_table, file=paste0("Mageck-graphs/Pathway_analysis/Pathway_analysis_",contrasts$V1[i],"_",
-                                                contrasts$V2[i],"_",g,".xlsx"),
-             sheetName = "pathway", append = FALSE)
-  }
+  if(nrow(pathway_gostres_table) > 1) {
+     write.xlsx(pathway_gostres_table, file=paste0("Mageck-graphs/Pathway_analysis/Pathway_analysis_",contrasts$V1[i],"_",
+                                                      contrasts$V2[i],"_",g,".xlsx"),
+                   sheetName = "pathway", append = FALSE)
+     pg2 <- gostplot(gostres, capped=T, interactive=T)
+     pg2
+     pg2[['x']][['layout']][['annotations']][[1]][['x']] <- -0.05
+     saveWidget(pg2,selfcontained = TRUE, file=paste0("Mageck-graphs/Pathway_analysis/Pathway_analysis_",contrasts$V1[i],"_",
+                                    contrasts$V2[i],"_",g,".html"))
+      }
   
   jpeg(paste0("Mageck-graphs/Consistency/ConsistencyView_",contrasts$V1[i],"_",contrasts$V2[i],".jpeg"))
   p3 = ConsistencyView(gdata, contrasts$V1[i], contrasts$V2[i])
