@@ -86,10 +86,20 @@ for(i in conditions){
                                     saveToFig = TRUE,
                                     libraryAnnotation=Brunello_Library,
                                     EXPname=i)
-  write.csv(normANDfcs$norm_counts, file=paste0("crisprcleanR-graphs/",i,"_norm_counts.csv"),row.names=FALSE)
-  write.csv(normANDfcs$logFCs, file=paste0("crisprcleanR-graphs/",i,"_logFCs.csv"),row.names=FALSE)
   
-  merge_table <- merge_table %>% right_join(normANDfcs[["norm_counts"]])
+  write.csv(normANDfcs$norm_counts, file=paste0(i,"_norm_counts.csv"),row.names=FALSE)
+  write.csv(normANDfcs$logFCs, file=paste0(i,"_logFCs.csv"),row.names=FALSE)
+  
+  gwSortedFCs <- ccr.logFCs2chromPos(normANDfcs$logFCs,Brunello_Library)
+  correctedFCs <- ccr.GWclean(gwSortedFCs,display=FALSE,label=i)
+  correctedCounts <- ccr.correctCounts(i,
+                                       normANDfcs$norm_counts,
+                                       correctedFCs,
+                                       Brunello_Library,
+                                       minTargetedGenes=3,
+                                       OutDir='./')
+  
+  merge_table <- merge_table %>% right_join(correctedCounts)
 }
 
 write.table(merge_table, file="all_norm_counts.tsv",row.names=FALSE, sep = "\t")
