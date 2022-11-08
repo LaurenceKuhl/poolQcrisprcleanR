@@ -84,8 +84,18 @@ for(i in conditions){
                                     saveToFig = TRUE,
                                     libraryAnnotation=Brunello_Library,
                                     EXPname=i)
+  
   write.csv(normANDfcs$norm_counts, file=paste0(i,"_norm_counts.csv"),row.names=FALSE)
   write.csv(normANDfcs$logFCs, file=paste0(i,"_logFCs.csv"),row.names=FALSE)
+  
+  gwSortedFCs <- ccr.logFCs2chromPos(normANDfcs$logFCs,Brunello_Library)
+  correctedFCs <- ccr.GWclean(gwSortedFCs,display=TRUE,label=i)
+  correctedCounts <- ccr.correctCounts(i,
+                                    normANDfcs$norm_counts,
+                                    correctedFCs,
+                                    Brunello_Library,
+                                    minTargetedGenes=3,
+                                    OutDir='./')
   
   merge_table <- merge_table %>% right_join(normANDfcs[["norm_counts"]])
 }
